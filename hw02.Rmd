@@ -206,7 +206,7 @@ ggplot(gapminder, aes(continent, gdpPercap))+
 
 ### `filter()`, `arrange()` and `select()` functions
 
-1, Only select data with `gdpPercap` greater than 30,000. 
+1. Only select data with `gdpPercap` greater than 30,000. 
 ```{r}
 gapminder %>% 
   filter(gdpPercap  > 30000) %>% 
