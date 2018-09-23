@@ -1,0 +1,285 @@
+---
+title: "Gapminder Data Exploration, Part 2"
+output: 
+    html_document:
+        theme: cerulean
+        toc: true
+        keep_md: true
+---
+
+## Setting up access to the dataset
+
+I will be analyzing the gapminder dataset. First, load the `gapminder` R package. Also load tidyverse package - this will also load ggplot2 and dplyr.
+
+```{r}
+library(gapminder)
+library(tidyverse)
+```
+
+## Smell testing the data
+Exploring the gapminder object, data frames:
+
+1. Check the data structure of the dataset
+```{r}
+typeof(gapminder)
+```
+
+2. Check the class of the dataset
+```{r}
+class(gapminder)
+```
+
+3. Find the number of columns
+```{r}
+ncol(gapminder)
+```
+
+4. Find the number of rows
+```{r}
+nrow(gapminder)
+```
+
+5. Find dataset's dimensions by using the dim function
+```{r}
+dim(gapminder)
+```
+
+6. Display an internal structure of the dataset (an alternative to summary)
+```{r}
+str(gapminder)%>% 
+  knitr::kable()
+```
+
+## Exploring variables and their characteristics
+
+The dataset consists of panel data: 3 quatitative variables (life expectancy, population and GDP per capita) are recorded from 1952 to 2007 for each country and the corresponding continent. Thus, we have 6 variables in total: 3 quantitative (`lifeExp`, `pop`, and `gdpPercap`), 2 categorical (`country`, `continent`) and the last one is `year`, which could be interpreted as quantitative or categorical depending on the purpose of the analysis. 
+
+### Exploring a quantitative variable
+
+We can measure various summary statistics (means, medians, max/min, etc.) for our quantitative variables by adding the variable name after $.
+
+##### Life Expectancy
+Find min, Q1, median, mean, Q3, max, standard deviation, and variance for the `lifeExp` variable
+```{r}
+summary(gapminder$lifeExp)
+sd(gapminder$lifeExp)
+var(gapminder$lifeExp)
+```
+
+
+##### GDP per capita
+Find min, Q1, median, mean, Q3, max, standard deviation, and variance for the `gdpPercap` variable
+```{r}
+summary(gapminder$gdpPercap)
+sd(gapminder$gdpPercap)
+var(gapminder$gdpPercap)
+```
+
+
+##### Population
+Find min, Q1, median, mean, Q3, max, standard deviation, and variance for the `pop` variable
+```{r}
+summary(gapminder$pop)
+sd(gapminder$pop)
+var(gapminder$pop)
+```
+
+
+### Exploring a categorical variable
+
+For categorical data, we can produce a contingency table that calculates counts for each combination of the categorical variable by using the table() function. 
+
+##### Continent
+Build a contingency table for the `continent` variable
+```{r}
+table(gapminder$continent)
+```
+
+We can also find proportions for each category  
+```{r}
+continent_prop <- table(gapminder$continent)
+prop.table(continent_prop)
+```
+
+##### Year
+It wasn't initially clear whether the `year` variable was categorical or quantitative. Let's make a contingency table to see how many records for each year there is in the dataset.
+
+Find contingency table for the `year` variable.
+```{r}
+table(gapminder$year)
+```
+
+We can notice here that data was collected only at 12 time-intervals that are five-years apart.
+
+## Exploring various plot types
+
+### Scatterplots
+
+Scatterplot between `pop` and `gdpPercap` (colour-coded by year)
+```{r}
+ggplot(gapminder, aes(x=pop, y=gdpPercap, color=year)) + 
+  geom_point()+
+  xlab("Country population size") +
+  ylab("GDP per capita") 
+```
+
+Scatterplot between `gdpPercap` and `lifeExp`, color-coded by continent
+```{r}
+ggplot(gapminder, aes(gdpPercap, lifeExp, color=continent)) + 
+  geom_point()+
+  xlab("GDP per capita") +
+  ylab("Average life expectancy") 
+```
+
+Scatterplot between `gdpPercap` and `lifeExp` (`gdpPercap` on a log scale), color-coded by continent
+```{r}
+ggplot(gapminder, aes(log(gdpPercap), lifeExp, color=continent)) + 
+  geom_point()+
+  xlab("Log of GDP per capita") +
+  ylab("Average life expectancy") 
+```
+
+### Histograms and Kernel density plots
+
+A plot of one quantitative variable. Maybe a histogram or densityplot or frequency polygon.
+
+Build the histogram of`gdpPercap` with 50 bins
+```{r}
+ggplot(gapminder, aes(gdpPercap))+
+  geom_histogram(bins=50, fill="blue")
+```
+
+
+Create a kernel density plot for `gdpPercap`
+```{r}
+ggplot(gapminder, aes(gdpPercap))+
+  geom_density(fill="red")
+```
+
+Overlap a kernel density plot with a histogram
+```{r}
+ggplot(gapminder, aes(gdpPercap))+
+  geom_histogram(aes(y=..density..), bins=60, fill="pink") +
+  geom_density()
+```
+
+### Barcharts
+
+Create a bar-chart for the `continent` variable
+```{r}
+ggplot(gapminder, aes(continent))+
+geom_bar(fill="orange")
+```
+
+### Boxplots, violin and jitter plots
+
+Make a boxplot of `lifeExp` for each continent
+```{r}
+ggplot(gapminder, aes(continent, lifeExp))+
+  geom_boxplot(fill="purple")
+```
+
+Make a boxplot of `gdpPercap` for each continent (log 10 scale for the GDP per capita variable)
+```{r}
+ggplot(gapminder, aes(continent, gdpPercap))+
+  scale_y_log10()+
+  geom_boxplot(fill="green")
+```
+
+Make a violin plot of `gdpPercap` for each continent (log 10 scale for the GDP per capita variable)
+```{r}
+ggplot(gapminder, aes(continent, gdpPercap))+
+  scale_y_log10()+
+  geom_violin(fill="red")
+```
+
+Add jitter plots to the violin plot of `gdpPercap`
+```{r}
+ggplot(gapminder, aes(continent, gdpPercap))+
+  scale_y_log10()+
+  geom_violin(fill="red")+
+  geom_jitter(alpha=0.15)
+```
+
+
+## Using filter(), select() and %>%
+
+### `filter()`, `arrange()` and `select()` functions
+
+1, Only select data with `gdpPercap` greater than 30,000. 
+```{r}
+gapminder %>% 
+  filter(gdpPercap  > 30000) %>% 
+  knitr::kable()
+```
+
+
+2. Of those, only take data from Europe or Americas between 1995 and 2005.
+```{r}
+gapminder %>% 
+  filter(gdpPercap  > 30000) %>% 
+  filter(continent == "Europe" | continent == "Americas" ) %>% 
+  filter(year>1995 & year<2005)%>% 
+  knitr::kable()
+```
+
+3. Only showcase country name, year and GDP per capita for selected countries. Arrange data by year from smallest to largest GDP per capita.
+```{r}
+gapminder %>% 
+  filter(gdpPercap  > 30000) %>% 
+  filter(continent == "Europe" | continent == "Americas" ) %>% 
+  filter(year>1995 & year<2005)  %>% 
+  select(country, year, gdpPercap) %>% 
+  arrange(year, gdpPercap)%>% 
+  knitr::kable()
+```
+
+
+### Time plots
+Make a time plot of American `gdpPercap` over time
+```{r}
+gapminder %>% 
+  filter(country == "United States") %>% 
+  ggplot(aes(year, gdpPercap))+
+  geom_point()+
+  geom_line()
+```
+
+Make a timeplot of `gdpPercap` for countries with population between 5m and 20m located in Asia
+```{r}
+gapminder %>% 
+  filter(pop>5000000 & pop < 20000000)  %>% 
+  filter(continent == "Asia") %>% 
+  ggplot(aes(year, gdpPercap, color=country))+
+  geom_point()+
+  geom_line()
+```
+
+### Scatterplots
+Make a scatterplot of `gdpPercap` and `lifeExp` for European countries between 1970 and 1994, add a smoothing function, color code by year.
+```{r}
+gapminder %>% 
+  filter(continent == "Europe") %>% 
+  filter(year>1970 & year<1994)  %>% 
+  ggplot(aes(gdpPercap, lifeExp, color=year))+
+  geom_point()+
+  geom_smooth()
+```
+
+
+## But I want to do more!
+
+Evaluate this code: 
+```{r}
+filter(gapminder, country == c("Rwanda", "Afghanistan"))%>% 
+  knitr::kable()
+```
+
+This code produces data entries for Rwanda and Afganistan such that the timelines don't overlap (e.g. the year 1957 has data only on one country not both), i.e. half of the data ends up being missing.
+
+Correct way to do this:
+```{r}
+gapminder %>% 
+  filter(country=="Rwanda"| country=="Afghanistan") %>% 
+  knitr::kable()
+```
