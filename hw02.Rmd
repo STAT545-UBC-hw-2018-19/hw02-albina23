@@ -283,3 +283,5 @@ gapminder %>%
   filter(country=="Rwanda"| country=="Afghanistan") %>% 
   knitr::kable()
 ```
+
+
